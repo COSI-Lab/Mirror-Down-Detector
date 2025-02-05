@@ -12,6 +12,7 @@ add_executable(${PROJECT_NAME}
     src/ping.cpp
     src/bot.cpp
     src/background.cpp
+    src/http.cpp
 )
  
 # Find our pre-installed DPP package (using FindDPP.cmake).
@@ -20,6 +21,7 @@ find_package(DPP REQUIRED)
 # Link the pre-installed DPP package.
 target_link_libraries(${PROJECT_NAME} 
     ${DPP_LIBRARIES}
+    curl
 )
  
 # Include the DPP directories.
