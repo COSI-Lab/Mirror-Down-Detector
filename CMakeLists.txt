@@ -1,10 +1,11 @@
 # Minimum CMake version required, we'll just use the latest version.
 cmake_minimum_required(VERSION 3.22)
 # Project name, version and description
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
+
+
 project(discord-bot VERSION 1.0 DESCRIPTION "A discord bot")
- 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
- 
+
 # Create an executable
 add_executable(${PROJECT_NAME}
     src/main.cpp
@@ -12,6 +13,7 @@ add_executable(${PROJECT_NAME}
     src/ping.cpp
     src/bot.cpp
     src/background.cpp
+    src/http.cpp
 )
  
 # Find our pre-installed DPP package (using FindDPP.cmake).
@@ -20,6 +22,7 @@ find_package(DPP REQUIRED)
 # Link the pre-installed DPP package.
 target_link_libraries(${PROJECT_NAME} 
     ${DPP_LIBRARIES}
+    curl
 )
  
 # Include the DPP directories.
