@@ -72,7 +72,7 @@ void registerSlashCommands(dpp::cluster& bot, std::vector<std::string> envData)
 void watchMirrorCommand(
     dpp::interaction           interaction,
     const dpp::slashcommand_t& event,
-    dpp::command_data_option   subcommand
+    dpp::command_interaction   subcommand
 )
 {
     // Fetch the issuing user's permissions
@@ -99,7 +99,7 @@ void watchMirrorCommand(
     if (subcommandName == "add")
     { // /watch-mirror add
         dpp::role role = interaction.get_resolved_role(
-            subcommand.get_value<dpp::snowflake>(0)
+            subcommand.options[0].get_value<dpp::snowflake>(0)
         );
         std::string roleMention = role.get_mention();
 
@@ -109,13 +109,20 @@ void watchMirrorCommand(
                 std::to_string(e_channel_id),
                 roleMention });
             writeFile2d(channels_roles, "../channels.txt");
+            event.reply("This channel now will recieve down-detection messages."
+            );
+        }
+        else
+        {
+            event.reply("This channel already recieves down-detection messages."
+            );
         }
     }
     else if (subcommandName == "delete")
     { // /watch-mirror delete
         if (!channelInFile)
         {
-            event.reply("This channel is not recieving down-detection messages"
+            event.reply("This channel is not recieving down-detection messages."
             );
             return;
         }
@@ -203,7 +210,7 @@ void botThread(std::vector<std::string> envData)
 
             if (interaction.get_command_name() == "watch-mirror")
             {
-                watchMirrorCommand(interaction, event, cmd_data.options[0]);
+                watchMirrorCommand(interaction, event, cmd_data);
             }
 
             if (interaction.get_command_name() == "ping")

@@ -25,6 +25,7 @@ std::pair<bool, std::string> ping(std::string url)
     std::string pingStr = ss.str();
 
     // parse the ping status
+    // TODO: change this to check for < 100% packet loss
     std::regex expression("(3 packets transmitted, 3 received?)");
     std::regex expression2("(3 packets transmitted, 2 received?)");
 

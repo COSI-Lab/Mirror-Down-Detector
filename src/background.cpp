@@ -58,6 +58,7 @@ createErrorEmbed(std::vector<std::pair<uint16_t, std::string>> errorCodes)
 /**
  * Returns a vector of pairs where each pair is in the format of
  * (status code, status message)
+ * This return type could probably use a typedef sometime in the future
  */
 std::vector<std::pair<uint16_t, std::string>>
 checkMirrorStatus(dpp::cluster& bot)
@@ -166,8 +167,8 @@ void sendEmbed(
         {
             message.set_allowed_mentions(
                 false,
-                true,
-                false,
+                true, // Parse @roles
+                true, // Parse @everyone
                 false,
                 std::vector<dpp::snowflake> {},
                 std::vector<dpp::snowflake> {}

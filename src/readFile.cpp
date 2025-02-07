@@ -26,25 +26,39 @@ std::vector<std::string> splitString(std::string str)
 
 std::vector<std::string> readFile(std::string filename)
 {
-    std::vector<std::string> output;
+    std::vector<std::string> output {};
     std::string              line;
     std::ifstream            file(filename);
+
     while (getline(file, line))
     {
         output.push_back(line);
     }
+    if (!file.is_open())
+    {
+        std::cout << "I/O error. This program must be run from a location "
+                     "where .env is in the immediate parent directory.\n";
+        exit(EXIT_FAILURE);
+    }
     file.close();
+
     return output;
 }
 
 std::vector<std::vector<std::string>> readFile2d(std::string filename)
 {
-    std::vector<std::vector<std::string>> output;
+    std::vector<std::vector<std::string>> output {};
     std::string                           line;
     std::ifstream                         file(filename);
     while (getline(file, line))
     {
         output.push_back(splitString(line));
+    }
+    if (!file.is_open())
+    {
+        std::cout << "I/O error. This program must be run from a location "
+                     "where .env is in the immediate parent directory.\n";
+        exit(EXIT_FAILURE);
     }
     file.close();
     return output;
