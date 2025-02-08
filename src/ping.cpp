@@ -15,8 +15,8 @@
 
 #include "ping.h"
 
-#define PING_TIMEOUT_SECONDS (10)
-#define PING_BUFFER (1024)
+constexpr time_t PING_TIMEOUT_SECONDS = 10;
+constexpr ssize_t PING_BUFFER = 1024;
 
 /**
  * @return `true` if the URL or IP responds to ping requests, and `false`
@@ -33,14 +33,16 @@ std::pair<bool, std::string> ping(std::string url)
     /* Child process */
     if(pid == 0)
     {
-        // The compiler gets pissy if we don't explicitly cast to char*
-        char* argv[] = {(char*)"/bin/ping",
-                         (char*)url.c_str(),
-                         (char*)"-c", (char*)"3", // 3 times
-                         (char*)"-W", (char*)"1", // 1s timeout
-                         (char*)"-i", (char*)"0.1", NULL}; // 0.1s interval
+        // Using strdup() to avoid const casting
+        char* argv[] = {strdup("/bin/ping"),
+                         strdup(url.c_str()),
+                         strdup("-c"), strdup("3"), // 3 times
+                         strdup("-W"), strdup("1"), // 1s timeout
+                         strdup("-i"), strdup("0.1"), NULL}; // 0.1s interval
+
         close(fd[0]); // don't output to console
         dup2(fd[1], 1); // Reassign ping's stdout to our pipe
+
         execve("/bin/ping", argv, NULL);
         perror("execve(2)");
         return std::make_pair(false, "execve(2) error " + errno);
@@ -62,7 +64,7 @@ std::pair<bool, std::string> ping(std::string url)
 
     int childStatus;
     while(time(NULL) < end) {
-        int bytesRead = read(fd[0], pingRes + pingResPtr, PING_BUFFER-pingResPtr);
+        ssize_t bytesRead = read(fd[0], pingRes + pingResPtr, PING_BUFFER-pingResPtr);
         if(bytesRead == 0) break; // EOF
         if(bytesRead == -1 && (errno != EAGAIN || errno != EWOULDBLOCK)) break;
         if(bytesRead > 0) pingResPtr += bytesRead;
@@ -84,7 +86,6 @@ std::pair<bool, std::string> ping(std::string url)
     // TODO: change this to check for < 100% packet loss
     std::regex expression("(3 packets transmitted, 3 received?)");
     std::regex expression2("(3 packets transmitted, 2 received?)");
-
     bool up = std::regex_search(pingStr, expression)
            || std::regex_search(pingStr, expression2);
 
