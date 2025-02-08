@@ -15,7 +15,8 @@
 
 #include "ping.h"
 
-#define PING_TIMEOUT_SECONDS 10
+#define PING_TIMEOUT_SECONDS (10)
+#define PING_BUFFER (1024)
 
 /**
  * @return `true` if the URL or IP responds to ping requests, and `false`
@@ -51,7 +52,7 @@ std::pair<bool, std::string> ping(std::string url)
     }
     
     // Read ping pipe into buffer
-    char *pingRes = new char[1024]{}; // 1024 bytes ought to be enough?
+    char *pingRes = new char[PING_BUFFER]{}; // 1024 bytes ought to be enough?
 
     int flags = fcntl(fd[0], F_GETFL);
     int rc = fcntl(fd[0], F_SETFL, O_NONBLOCK | flags);
@@ -61,7 +62,7 @@ std::pair<bool, std::string> ping(std::string url)
 
     int childStatus;
     while(time(NULL) < end) {
-        int bytesRead = read(fd[0], pingRes + pingResPtr, 1024-pingResPtr);
+        int bytesRead = read(fd[0], pingRes + pingResPtr, PING_BUFFER-pingResPtr);
         if(bytesRead == 0) break; // EOF
         if(bytesRead == -1 && (errno != EAGAIN || errno != EWOULDBLOCK)) break;
         if(bytesRead > 0) pingResPtr += bytesRead;
