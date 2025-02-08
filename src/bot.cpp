@@ -145,12 +145,13 @@ void watchMirrorCommand(
 }
 
 void pingCommand(
-    dpp::slashcommand_t event,
-    dpp::interaction    interaction,
-    std::string         address
+    dpp::interaction           interaction,
+    const dpp::slashcommand_t& event,
+    dpp::command_interaction   subcommand
 )
 {
-    event.reply("pinging...");
+    event.reply("Pinging...");
+    std::string address = std::get<std::string>(subcommand.options[0].value);
     std::pair<bool, std::string> pingObj = ping(address);
     if (pingObj.second != "")
     {
@@ -213,9 +214,9 @@ void botThread(std::vector<std::string> envData)
                 watchMirrorCommand(interaction, event, cmd_data);
             }
 
-            if (interaction.get_command_name() == "ping")
+            if (interaction.get_command_name() == "ping") // Fix param passing here
             {
-                pingCommand(event, interaction, cmd_data.options[0].name);
+                pingCommand(interaction, event, cmd_data);
             }
         }
     );
