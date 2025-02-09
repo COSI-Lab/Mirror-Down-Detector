@@ -1,164 +1,220 @@
-#include <iostream>
-#include <vector>
-#include <string>
-#include <utility>
-#include <future>
-#include <unistd.h> //linux only library
 #include <ctime>
+#include <future>
+#include <iostream>
+#include <string>
+#include <unistd.h> //linux only library
+#include <utility>
+#include <vector>
 
 #include <dpp/dpp.h>
 
-#include "readFile.h"
+#include "http.h"
 #include "ping.h"
+#include "readFile.h"
 
-dpp::embed createErrorEmbed(std::vector<uint16_t> errorCodes, std::string ping){
-    //create embed object
+const int PING_DELAY = 900;
+const int POLL_DELAY = 10;
+
+dpp::embed
+createErrorEmbed(std::vector<std::pair<uint16_t, std::string>> errorCodes)
+{
+    // create embed object
     dpp::embed embed;
 
-    if(errorCodes[0] == 200 && errorCodes[1] == 200 && errorCodes[2] == 1){
-        //everything is back to running well
+    if (errorCodes[0].first == 200 && errorCodes[1].first == 200
+        && errorCodes[2].first == 1)
+    {
+        // everything is back to running well
         embed.set_title("Mirror Is Back Up!!!!");
-        embed.set_color(0x00000000); //black hex with 2 FF in front for "alpha"
+        embed.set_color(0x00000000); // black hex with 2 FF in front for "alpha"
     }
-    else{
-        //something is down
+    else
+    {
+        // something is down
         embed.set_title("Mirror Is Down!!!!");
-        embed.set_color(0xFFFF0000); //red hex with 2 FF in front for "alpha"
+        embed.set_color(0xFFFF0000); // red hex with 2 FF in front for "alpha"
     }
 
-    //create a field for /status page
-    embed.add_field("mirror.clarkson.edu/status", std::string("HTTP status: ") + std::to_string(errorCodes[0]));
-    //create a field for /home page
-    embed.add_field("mirror.clarkson.edu/home", std::string("HTTP status: ") + std::to_string(errorCodes[1]));
-    //set the discription equal to the ping text
-    embed.set_description(ping);
-    //create footer
+    // create a field for /status page
+    embed.add_field(
+        "mirror.clarkson.edu/status",
+        std::string("HTTP status: ") + std::to_string(errorCodes[0].first)
+    );
+    // create a field for /home page
+    embed.add_field(
+        "mirror.clarkson.edu/home",
+        std::string("HTTP status: ") + std::to_string(errorCodes[1].first)
+    );
+    embed.set_description(errorCodes[2].second);
     dpp::embed_footer ef;
-    embed.set_footer(ef.set_text("COSI Mirror Down Detection").set_icon("https://avatars.githubusercontent.com/u/5634011?s=48&v=4"));
+    embed.set_footer(
+        ef.set_text("COSI Mirror Down Detection")
+            .set_icon("https://avatars.githubusercontent.com/u/5634011?s=48&v=4"
+            )
+    );
     return embed;
 }
 
-void backgroundThread(std::vector<std::string> envData){
+/**
+ * Returns a vector of pairs where each pair is in the format of
+ * (status code, status message)
+ * This return type could probably use a typedef sometime in the future
+ */
+std::vector<std::pair<uint16_t, std::string>>
+checkMirrorStatus(dpp::cluster& bot)
+{
+    std::promise<uint16_t> promiseStatus, promiseHome;
 
-    dpp::cluster bot(envData[0]);
- 
-    bot.on_log(dpp::utility::cout_logger());
- 
-    bot.on_ready([&bot, &envData](const dpp::ready_t& event){
+    std::future<uint16_t> futureStatus = promiseStatus.get_future();
+    std::future<uint16_t> futureHome   = promiseHome.get_future();
 
-        uint16_t state = 0;
-        std::vector<uint16_t> errorCodes {200, 200, 1};
+    // check /status
+    request(
+        "https://mirror.clarkson.edu/status",
+        [&promiseStatus](long resp) { promiseStatus.set_value(resp); }
+    );
 
-        std::time_t most_recient_ping = -1;
+    // check /home
+    request(
+        "https://mirror.clarkson.edu/home",
+        [&promiseHome](long resp) { promiseHome.set_value(resp); }
+    );
 
-        while(true){
-            //sleep for set time in seconds
-            sleep(60);
+    // Ping function returns true if the address responds to a ping
+    std::future<std::pair<bool, std::string>> pingResponse
+        = std::async(ping, "mirror.clarkson.edu");
 
-            //we use promises to get data out of the callback functions from bot.request
-            std::promise<uint16_t> promiseStatus;
-            std::promise<uint16_t> promiseHome;
-            //we use futures to wait for our promises to resolve
-            std::future<uint16_t> futureStatus = promiseStatus.get_future();
-            std::future<uint16_t> futureHome = promiseHome.get_future();
+    // wait for futures to complete before accessing the result
+    std::pair<bool, std::string> pingObj   = pingResponse.get(); // blocking
+    uint16_t                     statusInt = futureStatus.get(); // blocking
+    uint16_t                     homeInt   = futureHome.get();   // blocking
+    std::vector<std::pair<uint16_t, std::string>> status
+        = { std::make_pair(statusInt, ""), // our HTTP requests have no message,
+                                           // so feed the pair an empty string
+            std::make_pair(homeInt, ""),
+            std::make_pair((uint16_t)pingObj.first, pingObj.second) };
+    return status;
+}
 
-            //bot.request is an asynchronous function
-            // check /status
-            bot.request("https://mirror.clarkson.edu/status", dpp::m_get, [&promiseStatus](const dpp::http_request_completion_t& request){
-                promiseStatus.set_value(request.status);
-            });
-            //check /home
-            bot.request("https://mirror.clarkson.edu/home", dpp::m_get, [&promiseHome](const dpp::http_request_completion_t& request){
-                promiseHome.set_value(request.status);
-            });
+/**
+ * This function decides whether or not the bot needs to send an alert message.
+ * This function might not be necessary -- there used to be a complicated
+ * state machine to work this out.
+ *
+ * Any time the status changes, we want to send a message.
+ */
+bool handleMessageConditions(
+    std::vector<std::pair<uint16_t, std::string>> prevStatus,
+    std::vector<std::pair<uint16_t, std::string>> currentStatus
+)
+{
+    if (prevStatus.size() == 0)
+    { // First loop condition
+        return false;
+    }
 
-            //asycronosly ping mirror while http requests are running
-            std::future<std::pair<bool, std::string>> futurePingObj = std::async(ping, "mirror.clarkson.edu");
-
-            //wait for futures to complete before accessing the result
-            std::pair<bool, std::string> pingObj = futurePingObj.get(); //blocking
-            uint16_t statusInt = futureStatus.get(); //blocking
-            uint16_t homeInt = futureHome.get(); //blocking
-
-            //create currient error codes object
-            std::vector<uint16_t> currientErrorCodes = {statusInt, homeInt, pingObj.first};
-
-            //handle the state machine
-            bool sendMessage = false;
-            switch(state){
-                case 0:
-                case 1:
-                    if(currientErrorCodes[0] == 200 && currientErrorCodes[1] == 200 && currientErrorCodes[2] == 1){
-                        state = 0;
-                    }
-                    else{
-                        state++;
-                        if(state == 2){
-                            sendMessage = true;
-                        }
-                    }
-                break;
-                case 2:
-                    if(currientErrorCodes[0] == 200 && currientErrorCodes[1] == 200 && currientErrorCodes[2] == 1){
-                        state = 0;
-                        sendMessage = true;
-                    }
-                    else{
-                        for(uint16_t i = 0; i < errorCodes.size(); i++){
-                            if(errorCodes[i] != currientErrorCodes[i]){
-                                sendMessage = true;
-                            }
-                        }
-                    }
-            }
-
-            if(sendMessage == true){
-                //update error codes
-                errorCodes = currientErrorCodes;
-
-                //check last discord ping timestamp to see if we should ping on discord with the message to prevent ping spam
-                bool discordPing = false;
-                if(most_recient_ping == -1 || most_recient_ping + 900 <= std::time(0)){ //if 15 minutes have passed since the last discordping (or its the first ping)
-                    most_recient_ping = std::time(0);
-                    discordPing = true;
-                }
-
-                //read channel file
-                std::vector<std::vector<std::string>> channels_roles = readFile2d("../channels.txt");
-
-                //send messages to each channel in file
-                for(int i = 0; i < channels_roles.size(); i++){
-                    //currient timestamp
-                    std::time_t timestamp = std::time(nullptr);
-                    // convet channel id to long long
-                    long long channel_id = std::stoll(channels_roles[i][0]);
-                    // convet role ping to string
-                    std::string role_mention = "";
-                    if(discordPing == true){
-                        role_mention = channels_roles[i][1] + " ";
-                    }
-                    //create a message object
-                    dpp::message message(dpp::snowflake(channel_id), std::string(role_mention) + "<t:" + std::to_string(timestamp) + ":F>");
-                    //make the role pingable in the message
-                    if(discordPing == true){
-                        message.set_allowed_mentions(false, true, false, false, std::vector<dpp::snowflake> {}, std::vector<dpp::snowflake> {});
-                    }
-                    //create an embed object
-                    dpp::embed embed = createErrorEmbed(currientErrorCodes, pingObj.second);
-                    //add embed object to message object
-                    message.add_embed(embed);
-
-                    //send message
-                    bot.message_create(message, [&bot](const dpp::confirmation_callback_t& callback){
-                        if (callback.is_error()){
-                            //log error
-                            std::cout << "failed to send message" << std::endl;
-                        }
-                    });
-                }
-            }
-            
+    for (int i = 0; i < currentStatus.size(); i++)
+    {
+        if (prevStatus[i].first != currentStatus[i].first)
+        {
+            return true;
         }
-    });
+    }
+    return false;
+}
+
+time_t lastPing = -1;
+
+void sendEmbed(
+    dpp::cluster&                                 bot,
+    std::vector<std::pair<uint16_t, std::string>> status
+)
+{
+    bool discordPing = false;
+    if (lastPing == -1)
+    {
+        discordPing = true;
+    }
+    if (lastPing + PING_DELAY <= std::time(nullptr))
+    {
+        discordPing = true;
+    }
+
+    std::vector<std::vector<std::string>> channels_roles
+        = readFile2d("../channels.txt");
+
+    for (int i = 0; i < channels_roles.size(); i++)
+    {
+        std::time_t timestamp = std::time(nullptr);
+
+        long long channel_id = std::stoll(channels_roles[i][0]);
+
+        // The ping role is stored in channels.txt after the channel ID
+        std::string role_mention = "";
+        if (discordPing)
+        {
+            role_mention = channels_roles[i][1] + " ";
+            time(&lastPing);
+        }
+
+        dpp::message message(
+            dpp::snowflake(channel_id),
+            std::string(role_mention) + "<t:" + std::to_string(timestamp)
+                + ":F>"
+        );
+
+        if (discordPing)
+        {
+            message.set_allowed_mentions(
+                false,
+                true, // Parse @roles
+                true, // Parse @everyone
+                false,
+                std::vector<dpp::snowflake> {},
+                std::vector<dpp::snowflake> {}
+            );
+        }
+
+        dpp::embed embed = createErrorEmbed(status);
+        message.add_embed(embed);
+
+        bot.message_create(
+            message,
+            [&bot](const dpp::confirmation_callback_t& callback)
+            {
+                if (callback.is_error())
+                {
+                    std::cerr << "Failed to send message" << std::endl;
+                }
+            }
+        );
+    }
+}
+
+void backgroundThread(std::vector<std::string> envData)
+{
+    dpp::cluster bot { envData[0] };
+    bot.on_log(dpp::utility::cout_logger());
+    bot.on_ready(
+        [&bot, &envData](const dpp::ready_t& event)
+        {
+            std::vector<std::pair<uint16_t, std::string>> prevStatus {};
+            while (true)
+            {
+                std::vector<std::pair<uint16_t, std::string>> currentStatus
+                    = checkMirrorStatus(bot);
+                bool sendMessage
+                    = handleMessageConditions(prevStatus, currentStatus);
+                if (sendMessage)
+                {
+                    sendEmbed(bot, currentStatus);
+                }
+
+                prevStatus = currentStatus;
+
+                sleep(POLL_DELAY);
+            }
+        }
+    );
     bot.start(dpp::st_wait);
 }
