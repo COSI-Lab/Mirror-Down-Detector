@@ -141,7 +141,7 @@ void sendEmbed(
     }
 
     std::vector<std::vector<std::string>> channels_roles
-        = readFile2d("../channels.txt");
+        = readFile2d("/down-detector/resources/channels.txt");
 
     for (int i = 0; i < channels_roles.size(); i++)
     {

@@ -90,10 +90,11 @@ void watchMirrorCommand(
         return;
     }
 
+    // TODO: make this pretty
     bool channelInFile
-        = hasChannel("../channels.txt", std::to_string(e_channel_id));
+        = hasChannel("/down-detector/resources/channels.txt", std::to_string(e_channel_id));
     std::vector<std::vector<std::string>> channels_roles
-        = readFile2d("../channels.txt");
+        = readFile2d("/down-detector/resources/channels.txt");
 
     std::string subcommandName = subcommand.options[0].name;
     if (subcommandName == "add")
@@ -108,7 +109,7 @@ void watchMirrorCommand(
             channels_roles.push_back(std::vector<std::string> {
                 std::to_string(e_channel_id),
                 roleMention });
-            writeFile2d(channels_roles, "../channels.txt");
+            writeFile2d(channels_roles, "/down-detector/resources/channels.txt");
             event.reply("This channel now will recieve down-detection messages."
             );
         }
@@ -137,7 +138,7 @@ void watchMirrorCommand(
         }
 
         channels_roles.erase(channels_roles.begin() + index);
-        writeFile2d(channels_roles, "../channels.txt");
+        writeFile2d(channels_roles, "/down-detector/resources/channels.txt");
         event.reply(
             "This channel will no longer recieve down-detection messages."
         );
@@ -199,6 +200,7 @@ void pingCommand(
 void botThread(std::vector<std::string> envData)
 {
     dpp::cluster bot(envData[0]);
+    std::cout << "Key: " << envData[0] << "\n";
 
     bot.on_log(dpp::utility::cout_logger());
 

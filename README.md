@@ -43,4 +43,4 @@ global
 
 ### Start the bot
 
-To start the bot just run the start-bot.sh bash script.
+To start the bot just run `docker-compose up`.

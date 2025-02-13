@@ -21,15 +21,10 @@ find_package(DPP REQUIRED)
  
 # Link the pre-installed DPP package.
 target_link_libraries(${PROJECT_NAME} 
-    ${DPP_LIBRARIES}
     curl
+    libdpp.so
 )
- 
-# Include the DPP directories.
-target_include_directories(${PROJECT_NAME} PRIVATE
-    ${DPP_INCLUDE_DIR}
-)
- 
+
 # Set C++ version
 set_target_properties(${PROJECT_NAME} PROPERTIES
     CXX_STANDARD 17

@@ -96,6 +96,8 @@ std::pair<bool, std::string> ping(std::string url)
         waitpid(pid, NULL, 0);
     }
 
+    close(fd[0]);
+    close(fd[1]);
     std::string pingStr { pingRes };
     delete pingRes;
 

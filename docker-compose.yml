@@ -1,0 +1,9 @@
+name: down-detector
+
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    volumes:
+      - "./resources:/down-detector/resources"

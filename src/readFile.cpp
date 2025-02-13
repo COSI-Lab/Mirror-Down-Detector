@@ -36,8 +36,7 @@ std::vector<std::string> readFile(std::string filename)
     }
     if (!file.is_open())
     {
-        std::cout << "I/O error. This program must be run from a location "
-                     "where .env is in the immediate parent directory.\n";
+        std::cout << "I/O error while opening " << filename << ".\n";
         exit(EXIT_FAILURE);
     }
     file.close();
@@ -56,8 +55,7 @@ std::vector<std::vector<std::string>> readFile2d(std::string filename)
     }
     if (!file.is_open())
     {
-        std::cout << "I/O error. This program must be run from a location "
-                     "where .env is in the immediate parent directory.\n";
+        std::cout << "I/O error while opening " << filename << ".\n";
         exit(EXIT_FAILURE);
     }
     file.close();
