@@ -9,8 +9,8 @@
 
 int main()
 {
-    const std::vector<std::string> envData = readFile("../.env");
-
+    const std::vector<std::string> envData = readFile("/down-detector/resources/.env");
+    
     std::thread t1(botThread, envData);
     std::thread t2(backgroundThread, envData);
 
