@@ -24,7 +24,7 @@ void registerSlashCommands(dpp::cluster& bot, std::vector<std::string> envData)
         )
             .add_option(dpp::command_option(
                 dpp::co_role,
-                "Role",
+                "role",
                 "Role to ping in channel (defaults to @everyone)",
                 true
             ))
@@ -42,7 +42,7 @@ void registerSlashCommands(dpp::cluster& bot, std::vector<std::string> envData)
         bot.me.id
     );
     pingCommand.add_option(
-        dpp::command_option(dpp::co_string, "Address", "Address to ping", true)
+        dpp::command_option(dpp::co_string, "address", "Address to ping", true)
     );
 
     if (envData[1] == "global")
