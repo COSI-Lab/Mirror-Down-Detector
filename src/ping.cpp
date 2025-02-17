@@ -101,13 +101,8 @@ std::pair<bool, std::string> ping(std::string url)
     std::string pingStr { pingRes };
     delete pingRes;
 
-    // TODO: change this to check for < 100% packet loss
-    std::regex expression("(3 packets transmitted, 3 received?)");
-    std::regex expression2("(3 packets transmitted, 2 received?)");
-    bool       up = std::regex_search(pingStr, expression)
-           || std::regex_search(pingStr, expression2);
-    std::regex expression3{"\\s\\d?\\d% packet loss"};
-    up = std::regex_search(pingStr, expression3);
+    std::regex expression("\\s100% packet loss");
+    bool up = !std::regex_search(pingStr, expression);
 
     // return a status and the ping output
     std::pair<bool, std::string> pingObj(up, pingStr);
