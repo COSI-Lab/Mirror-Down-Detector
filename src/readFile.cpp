@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 
-#include "readFile.h"
+#include <readFile.h>
 
 std::vector<std::string> splitString(std::string str){
     std::vector<std::string> output;
