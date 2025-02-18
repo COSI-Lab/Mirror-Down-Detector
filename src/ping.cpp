@@ -6,7 +6,7 @@
 #include <string>
 #include <utility>
 
-#include <ping.h>
+#include <ping.hpp>
 
 std::pair<bool, std::string> ping(std::string url)
 {

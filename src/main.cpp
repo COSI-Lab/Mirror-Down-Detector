@@ -3,9 +3,9 @@
 #include <thread>
 #include <vector>
 
-#include <background.h>
-#include <bot.h>
-#include <readFile.h>
+#include <background.hpp>
+#include <bot.hpp>
+#include <readFile.hpp>
 
 int main()
 {

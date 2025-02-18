@@ -5,8 +5,8 @@
 
 #include <dpp/dpp.h>
 
-#include <ping.h>
-#include <readFile.h>
+#include <ping.hpp>
+#include <readFile.hpp>
 
 void botThread(std::vector<std::string> envData)
 {

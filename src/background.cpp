@@ -8,8 +8,8 @@
 
 #include <dpp/dpp.h>
 
-#include <ping.h>
-#include <readFile.h>
+#include <ping.hpp>
+#include <readFile.hpp>
 
 dpp::embed createErrorEmbed(std::vector<uint16_t> errorCodes, std::string ping)
 {
