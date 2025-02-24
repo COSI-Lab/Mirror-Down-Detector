@@ -1,7 +1,12 @@
-#include "http.h"
-#include <curl/curl.h>
+// Header Being Defined
+#include <mirror/down_detector/http.hpp>
+
+// Standard Library Includes
 #include <future>
 #include <iostream>
+
+// Third Party Includes
+#include <curl/curl.h>
 
 size_t write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
 {

@@ -3,9 +3,9 @@
 #include <thread>
 #include <vector>
 
-#include "background.h"
-#include "bot.h"
-#include "readFile.h"
+#include <mirror/down_detector/background.h>
+#include <mirror/down_detector/bot.h>
+#include <mirror/down_detector/readFile.h>
 
 int main()
 {

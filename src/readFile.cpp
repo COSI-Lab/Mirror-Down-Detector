@@ -1,9 +1,11 @@
+// Header Being Defined
+#include <mirror/down_detector/readFile.hpp>
+
+// Standard Library Includes
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
-
-#include "readFile.h"
 
 /**
  * I have a feeling that this exists somewhere in the STL
