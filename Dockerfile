@@ -8,7 +8,8 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     ninja-build \
     curl \
-    libopus0
+    libopus0\
+    libz-dev
 WORKDIR /down-detector
 COPY ./src src
 COPY ./include include
@@ -23,7 +24,8 @@ RUN apt-get update && apt-get install -y \
     libcurl4 \
     iputils-ping \
     curl \
-    libopus0 
+    libopus0 \
+    libz
 COPY --from=builder \
     /down-detector/build/src/down-detector \
     /down-detector/bin/down-detector
