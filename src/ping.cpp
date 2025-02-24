@@ -8,6 +8,8 @@
 #include <unistd.h>
 
 // Standard Library Headers
+#include <cerrno>
+#include <csignal>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
@@ -52,7 +54,10 @@ auto ping(const std::string& url) -> std::pair<bool, std::string>
 
         execve("/bin/ping", argv, NULL);
         perror("execve(2)");
-        return std::make_pair(false, "execve(2) error " + errno);
+        return std::make_pair(
+            false,
+            "execve(2) error " + std::to_string(errno)
+        );
     }
 
     if (pid == -1)
@@ -92,7 +97,7 @@ auto ping(const std::string& url) -> std::pair<bool, std::string>
             break;
         }
 
-        sleep(0.5); // lets not hog the cpu
+        sleep(1); // lets not hog the cpu
     }
 
     if (pid != 0)
@@ -104,7 +109,7 @@ auto ping(const std::string& url) -> std::pair<bool, std::string>
     close(fd[0]);
     close(fd[1]);
     std::string pingStr { pingRes };
-    delete pingRes;
+    delete[] pingRes;
 
     std::regex expression("\\s100% packet loss");
     bool       up = !std::regex_search(pingStr, expression);

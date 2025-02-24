@@ -12,7 +12,7 @@
 
 // Project Includes
 #include <mirror/down_detector/ping.hpp>
-#include <mirror/down_detector/readFile.h>
+#include <mirror/down_detector/readFile.hpp>
 
 void registerSlashCommands(dpp::cluster& bot, std::vector<std::string> envData)
 {
