@@ -208,7 +208,7 @@ void pingCommand(
     }
 }
 
-void botThread(std::vector<std::string> envData)
+auto botThread(const std::vector<std::string>& envData) -> void
 {
     dpp::cluster bot(envData[0]);
     std::cout << "Key: " << envData[0] << "\n";

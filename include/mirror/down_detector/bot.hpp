@@ -1,3 +1,7 @@
 #pragma once
 
-void botThread(std::vector<std::string> envData);
+// Standard Library Includes
+#include <string>
+#include <vector>
+
+auto botThread(const std::vector<std::string>& envData) -> void;

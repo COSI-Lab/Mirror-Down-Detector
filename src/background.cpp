@@ -199,7 +199,7 @@ void sendEmbed(
     }
 }
 
-void backgroundThread(std::vector<std::string> envData)
+auto backgroundThread(const std::vector<std::string>& envData) -> void
 {
     dpp::cluster bot { envData[0] };
     bot.on_log(dpp::utility::cout_logger());

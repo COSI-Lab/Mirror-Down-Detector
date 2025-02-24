@@ -26,7 +26,7 @@ std::vector<std::string> splitString(std::string str)
     return output;
 }
 
-std::vector<std::string> readFile(std::string filename)
+auto readFile(const std::string& filename) -> std::vector<std::string>
 {
     std::vector<std::string> output {};
     std::string              line;
@@ -46,7 +46,8 @@ std::vector<std::string> readFile(std::string filename)
     return output;
 }
 
-std::vector<std::vector<std::string>> readFile2d(std::string filename)
+auto readFile2d(const std::string& filename)
+    -> std::vector<std::vector<std::string>>
 {
     std::vector<std::vector<std::string>> output {};
     std::string                           line;
@@ -64,10 +65,10 @@ std::vector<std::vector<std::string>> readFile2d(std::string filename)
     return output;
 }
 
-void writeFile2d(
-    std::vector<std::vector<std::string>> inputMatrix,
-    std::string                           filename
-)
+auto writeFile2d(
+    const std::vector<std::vector<std::string>>& inputMatrix,
+    const std::string&                           filename
+) -> void
 {
     std::ofstream channelFile;
     channelFile.open(filename);
@@ -82,7 +83,8 @@ void writeFile2d(
     channelFile.close();
 }
 
-bool hasChannel(std::string filename, std::string channelId)
+auto hasChannel(const std::string& filename, const std::string& channelId)
+    -> bool
 {
     std::vector<std::vector<std::string>> channels_roles = readFile2d(filename);
 

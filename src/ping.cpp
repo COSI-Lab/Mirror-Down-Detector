@@ -25,7 +25,7 @@ constexpr ssize_t PING_BUFFER          = 1024;
  * @return `true` if the URL or IP responds to ping requests, and `false`
  * otherwise.
  */
-std::pair<bool, std::string> ping(std::string url)
+auto ping(const std::string& url) -> std::pair<bool, std::string>
 {
     // Create pipe for IPC
     int fd[2];

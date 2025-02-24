@@ -1,3 +1,7 @@
 #pragma once
 
-void backgroundThread(std::vector<std::string> envData);
+// Standard Library Includes
+#include <string>
+#include <vector>
+
+auto backgroundThread(const std::vector<std::string>& envData) -> void;

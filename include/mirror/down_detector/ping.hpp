@@ -1,3 +1,7 @@
 #pragma once
 
-std::pair<bool, std::string> ping(std::string url);
+// Standard Library Includes
+#include <string>
+#include <utility>
+
+auto ping(const std::string& url) -> std::pair<bool, std::string>;

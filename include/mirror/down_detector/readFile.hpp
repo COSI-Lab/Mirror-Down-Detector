@@ -1,12 +1,18 @@
 #pragma once
 
-std::vector<std::string> readFile(std::string filename);
+// Standard Library Includes
+#include <string>
+#include <vector>
 
-std::vector<std::vector<std::string>> readFile2d(std::string filename);
+auto readFile(const std::string& filename) -> std::vector<std::string>;
 
-void writeFile2d(
-    std::vector<std::vector<std::string>> inputMatrix,
-    std::string                           filename
-);
+auto readFile2d(const std::string& filename)
+    -> std::vector<std::vector<std::string>>;
 
-bool hasChannel(std::string filename, std::string channelId);
+auto writeFile2d(
+    const std::vector<std::vector<std::string>>& inputMatrix,
+    const std::string&                           filename
+) -> void;
+
+auto hasChannel(const std::string& filename, const std::string& channelId)
+    -> bool;
