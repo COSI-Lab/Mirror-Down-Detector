@@ -27,9 +27,9 @@ COPY --from=builder \
     /down-detector/bin/down-detector
 COPY --from=builder \
     /down-detector/build/_deps/dpp-build/library/CMakeFiles/libdpp.so \
-    /down-detector/lib/libdpp.so
+    /lib/libdpp.so
 COPY --from=builder \
     /down-detector/build/_deps/spdlog-build/libspdlog.so \
-    /down-detector/lib/libspdlog.so
+    /lib/libspdlog.so
 RUN ldconfig
 ENTRYPOINT /down-detector/bin/down-detector
