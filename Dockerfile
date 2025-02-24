@@ -11,6 +11,8 @@ RUN apt-get update && apt-get install -y \
     libopus0
 WORKDIR /down-detector
 COPY ./src src
+COPY ./include include
+COPY ./cmake cmake
 COPY ./CMakeLists.txt CMakeLists.txt
 RUN cmake -B build -G Ninja
 RUN cmake --build build
