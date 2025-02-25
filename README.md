@@ -44,3 +44,4 @@ global
 ### Start the bot
 
 To start the bot just run `docker-compose up`.
+Your `.env` file should be located in a subdirectory in the project root called `resources/`. Your `channels.txt` will also be located in this subdirectory, but you do not need to manually create this file.
