@@ -18,19 +18,17 @@ COPY ./CMakeLists.txt CMakeLists.txt
 RUN cmake -B build -G Ninja
 RUN cmake --build build
 
-
-FROM ubuntu:24.04 as runner
+FROM ubuntu:24.04 AS runner
 RUN apt-get update && apt-get install -y \
     libcurl4 \
     iputils-ping \
     curl \
-    libopus0 \
-    libz
+    libopus0
 COPY --from=builder \
     /down-detector/build/src/down-detector \
     /down-detector/bin/down-detector
 COPY --from=builder \
-    /down-detector/build/_deps/dpp-build/library/CMakeFiles/libdpp.so \
+    /down-detector/build/_deps/dpp-build/library/libdpp.so \
     /lib/libdpp.so
 COPY --from=builder \
     /down-detector/build/_deps/spdlog-build/libspdlog.so \
