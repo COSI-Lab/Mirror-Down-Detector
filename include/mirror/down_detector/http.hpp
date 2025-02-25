@@ -4,5 +4,5 @@
 #include <string>
 
 // Add a parameter!
-auto request(const std::string& url, std::function<void(long)> callback)
+auto request(const std::string& url, const std::function<void(long)>& callback)
     -> void;

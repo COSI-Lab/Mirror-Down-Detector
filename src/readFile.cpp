@@ -10,19 +10,19 @@
 /**
  * I have a feeling that this exists somewhere in the STL
  */
-std::vector<std::string> splitString(std::string str)
+std::vector<std::string> splitString(const std::string& str)
 {
     std::vector<std::string> output;
-    int                      start = 0;
-    int                      end   = str.find(" ");
-    while (end != -1)
+    std::size_t              startOfToken = 0;
+    std::size_t              endOfToken   = str.find(' ');
+    while (endOfToken != -1)
     {
-        output.push_back(str.substr(start, end - start));
-        start = end + 1;
-        end   = str.find(" ", start);
+        output.push_back(str.substr(startOfToken, endOfToken - startOfToken));
+        startOfToken = endOfToken + 1;
+        endOfToken   = str.find(' ', startOfToken);
     }
     // get the last item in list
-    output.push_back(str.substr(start, end - start));
+    output.push_back(str.substr(startOfToken, endOfToken - startOfToken));
     return output;
 }
 
@@ -39,7 +39,7 @@ auto readFile(const std::string& filename) -> std::vector<std::string>
     if (!file.is_open())
     {
         std::cout << "I/O error while opening " << filename << ".\n";
-        exit(EXIT_FAILURE);
+        ::exit(EXIT_FAILURE);
     }
     file.close();
 
@@ -59,7 +59,7 @@ auto readFile2d(const std::string& filename)
     if (!file.is_open())
     {
         std::cout << "I/O error while opening " << filename << ".\n";
-        exit(EXIT_FAILURE);
+        ::exit(EXIT_FAILURE);
     }
     file.close();
     return output;
@@ -72,13 +72,13 @@ auto writeFile2d(
 {
     std::ofstream channelFile;
     channelFile.open(filename);
-    for (int i = 0; i < inputMatrix.size(); i++)
+    for (std::size_t idx = 0; idx < inputMatrix.size(); idx++)
     {
-        for (int j = 0; j < inputMatrix[i].size(); j++)
+        for (std::size_t jdx = 0; jdx < inputMatrix.at(idx).size(); jdx++)
         {
-            channelFile << inputMatrix[i][j] << " ";
+            channelFile << inputMatrix.at(idx).at(jdx) << " ";
         }
-        channelFile << std::endl;
+        channelFile << '\n';
     }
     channelFile.close();
 }
@@ -90,7 +90,7 @@ auto hasChannel(const std::string& filename, const std::string& channelId)
 
     for (int i = 0; i < channels_roles.size(); i++)
     {
-        if (channelId == channels_roles[i][0])
+        if (channelId == channels_roles.at(i).at(0))
         {
             return true;
         }

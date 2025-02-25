@@ -11,6 +11,7 @@ Checks:
   - performance-*,
   - portability-*,
   - readability-*
+  - -*pro-type-vararg
 WarningsAsErrors: "*"
 FormatStyle: file
 HeaderFilterRegex: "./include/*"

@@ -2,6 +2,7 @@
 #include <mirror/down_detector/bot.hpp>
 
 // Standard Library Includes
+#include <cstdint>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -51,7 +52,7 @@ void registerSlashCommands(dpp::cluster& bot, std::vector<std::string> envData)
         dpp::command_option(dpp::co_string, "address", "Address to ping", true)
     );
 
-    if (envData[1] == "global")
+    if (envData.at(1) == "global")
     {
         // If we are running globally, register them for all guilds
         if (dpp::run_once<struct register_bot_commands>())
@@ -61,10 +62,10 @@ void registerSlashCommands(dpp::cluster& bot, std::vector<std::string> envData)
             bot.global_command_create(pingCommand);
         }
     }
-    else if (envData[1] == "test" && envData.size() >= 3)
+    else if (envData.at(1) == "test" && envData.size() >= 3)
     {
         // If we are running in test mode, register commands for the test guild
-        long long guild_id = std::stoll(envData[2]);
+        long long guild_id = std::stoll(envData.at(2));
         bot.guild_command_create(watchMirror, guild_id);
         bot.guild_command_create(pingCommand, guild_id);
     }
@@ -82,7 +83,7 @@ void watchMirrorCommand(
 )
 {
     // Fetch the issuing user's permissions
-    uint64_t          e_channel_id  = interaction.channel_id;
+    std::uint64_t     e_channel_id  = interaction.channel_id;
     dpp::user         e_user        = interaction.get_issuing_user();
     dpp::guild        e_guild       = interaction.get_guild();
     dpp::guild_member e_member      = e_guild.members.find(e_user.id)->second;
@@ -104,11 +105,11 @@ void watchMirrorCommand(
     std::vector<std::vector<std::string>> channels_roles
         = readFile2d("/down-detector/resources/channels.txt");
 
-    std::string subcommandName = subcommand.options[0].name;
+    std::string subcommandName = subcommand.options.at(0).name;
     if (subcommandName == "add")
     { // /watch-mirror add
         dpp::role role = interaction.get_resolved_role(
-            subcommand.options[0].get_value<dpp::snowflake>(0)
+            subcommand.options.at(0).get_value<dpp::snowflake>(0)
         );
         std::string roleMention = role.get_mention();
 
@@ -142,7 +143,7 @@ void watchMirrorCommand(
         int index = 0;
         for (int i = 0; i < channels_roles.size(); i++)
         {
-            if (channels_roles[i][0] == std::to_string(e_channel_id))
+            if (channels_roles.at(i).at(0) == std::to_string(e_channel_id))
             {
                 index = i;
             }
@@ -163,7 +164,7 @@ void pingCommand(
 )
 {
     event.reply("Pinging...");
-    std::string address = std::get<std::string>(subcommand.options[0].value);
+    std::string address = std::get<std::string>(subcommand.options.at(0).value);
     std::pair<bool, std::string> pingObj = ping(address);
     if (pingObj.second != "")
     {
@@ -210,8 +211,8 @@ void pingCommand(
 
 auto botThread(const std::vector<std::string>& envData) -> void
 {
-    dpp::cluster bot(envData[0]);
-    std::cout << "Key: " << envData[0] << "\n";
+    dpp::cluster bot(envData.at(0));
+    std::cout << "Key: " << envData.at(0) << "\n";
 
     bot.on_log(dpp::utility::cout_logger());
 

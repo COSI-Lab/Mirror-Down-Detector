@@ -1,8 +1,9 @@
-#include <iostream>
+// Standard Includes
 #include <string>
 #include <thread>
 #include <vector>
 
+// Project Includes
 #include <mirror/down_detector/background.hpp>
 #include <mirror/down_detector/bot.hpp>
 #include <mirror/down_detector/readFile.hpp>

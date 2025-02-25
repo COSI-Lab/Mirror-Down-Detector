@@ -5,32 +5,36 @@
 #include <unistd.h>
 
 // Standard Library Includes
+#include <algorithm>
+#include <cstdint>
 #include <ctime>
 #include <future>
 #include <iostream>
+#include <ranges>
 #include <string>
 #include <utility>
 #include <vector>
 
 // Third Party Includes
 #include <dpp/dpp.h>
+#include <spdlog/spdlog.h>
 
 // Project Includes
 #include <mirror/down_detector/http.hpp>
 #include <mirror/down_detector/ping.hpp>
 #include <mirror/down_detector/readFile.hpp>
 
-const int PING_DELAY = 900;
-const int POLL_DELAY = 10;
+constexpr std::uint32_t PING_DELAY = 900;
+constexpr std::uint32_t POLL_DELAY = 10;
 
 dpp::embed
-createErrorEmbed(std::vector<std::pair<uint16_t, std::string>> errorCodes)
+createErrorEmbed(std::vector<std::pair<std::uint16_t, std::string>> errorCodes)
 {
     // create embed object
     dpp::embed embed;
 
-    if (errorCodes[0].first == 200 && errorCodes[1].first == 200
-        && errorCodes[2].first == 1)
+    if (errorCodes.at(0).first == 200 && errorCodes.at(1).first == 200
+        && errorCodes.at(2).first == 1)
     {
         // everything is back to running well
         embed.set_title("Mirror Is Back Up!!!!");
@@ -46,14 +50,14 @@ createErrorEmbed(std::vector<std::pair<uint16_t, std::string>> errorCodes)
     // create a field for /status page
     embed.add_field(
         "mirror.clarkson.edu/status",
-        std::string("HTTP status: ") + std::to_string(errorCodes[0].first)
+        std::string("HTTP status: ") + std::to_string(errorCodes.at(0).first)
     );
     // create a field for /home page
     embed.add_field(
         "mirror.clarkson.edu/home",
-        std::string("HTTP status: ") + std::to_string(errorCodes[1].first)
+        std::string("HTTP status: ") + std::to_string(errorCodes.at(1).first)
     );
-    embed.set_description(errorCodes[2].second);
+    embed.set_description(errorCodes.at(2).second);
     dpp::embed_footer ef;
     embed.set_footer(
         ef.set_text("COSI Mirror Down Detection")
@@ -71,10 +75,11 @@ createErrorEmbed(std::vector<std::pair<uint16_t, std::string>> errorCodes)
 std::vector<std::pair<uint16_t, std::string>>
 checkMirrorStatus(dpp::cluster& bot)
 {
-    std::promise<uint16_t> promiseStatus, promiseHome;
+    std::promise<std::uint16_t> promiseStatus;
+    std::promise<std::uint16_t> promiseHome;
 
-    std::future<uint16_t> futureStatus = promiseStatus.get_future();
-    std::future<uint16_t> futureHome   = promiseHome.get_future();
+    auto futureStatus = promiseStatus.get_future();
+    auto futureHome   = promiseHome.get_future();
 
     // check /status
     request(
@@ -94,13 +99,16 @@ checkMirrorStatus(dpp::cluster& bot)
 
     // wait for futures to complete before accessing the result
     std::pair<bool, std::string> pingObj   = pingResponse.get(); // blocking
-    uint16_t                     statusInt = futureStatus.get(); // blocking
-    uint16_t                     homeInt   = futureHome.get();   // blocking
+    std::uint16_t                statusInt = futureStatus.get(); // blocking
+    std::uint16_t                homeInt   = futureHome.get();   // blocking
     std::vector<std::pair<uint16_t, std::string>> status
         = { std::make_pair(statusInt, ""), // our HTTP requests have no message,
                                            // so feed the pair an empty string
             std::make_pair(homeInt, ""),
-            std::make_pair((uint16_t)pingObj.first, pingObj.second) };
+            std::make_pair(
+                static_cast<std::uint16_t>(pingObj.first),
+                pingObj.second
+            ) };
     return status;
 }
 
@@ -111,58 +119,55 @@ checkMirrorStatus(dpp::cluster& bot)
  *
  * Any time the status changes, we want to send a message.
  */
-bool handleMessageConditions(
-    std::vector<std::pair<uint16_t, std::string>> prevStatus,
-    std::vector<std::pair<uint16_t, std::string>> currentStatus
-)
+auto statusHasChanged(
+    const std::ranges::viewable_range auto& prevStatus,
+    const std::ranges::viewable_range auto& currentStatus
+) -> bool
 {
-    if (prevStatus.size() == 0)
-    { // First loop condition
-        return false;
-    }
-
-    for (int i = 0; i < currentStatus.size(); i++)
-    {
-        if (prevStatus[i].first != currentStatus[i].first)
+    return std::ranges::any_of(
+        std::views::zip(prevStatus, currentStatus),
+        [](const auto& item) -> bool
         {
-            return true;
+            const auto [prev, curr] = item;
+            return prev.first != curr.first;
         }
-    }
-    return false;
+    );
 }
 
-time_t lastPing = -1;
+::time_t lastPing = -1;
 
-void sendEmbed(
+void sendUpdatedStatus(
     dpp::cluster&                                 bot,
     std::vector<std::pair<uint16_t, std::string>> status
 )
 {
-    bool discordPing = false;
+    bool shouldIncludePing = false;
     if (lastPing == -1)
     {
-        discordPing = true;
+        shouldIncludePing = true;
     }
     if (lastPing + PING_DELAY <= std::time(nullptr))
     {
-        discordPing = true;
+        shouldIncludePing = true;
     }
 
+    // !: We shouldn't re-read this file every time we send an embed.
+    // TODO: Store contents of file in memory
     std::vector<std::vector<std::string>> channels_roles
         = readFile2d("/down-detector/resources/channels.txt");
 
-    for (int i = 0; i < channels_roles.size(); i++)
+    for (std::size_t idx = 0; idx < channels_roles.size(); idx++)
     {
         std::time_t timestamp = std::time(nullptr);
 
-        long long channel_id = std::stoll(channels_roles[i][0]);
+        long long channel_id = std::stoll(channels_roles.at(idx).at(0));
 
         // The ping role is stored in channels.txt after the channel ID
         std::string role_mention = "";
-        if (discordPing)
+        if (shouldIncludePing)
         {
-            role_mention = channels_roles[i][1] + " ";
-            time(&lastPing);
+            role_mention = channels_roles.at(idx).at(1) + " ";
+            std::time(&lastPing);
         }
 
         dpp::message message(
@@ -171,15 +176,22 @@ void sendEmbed(
                 + ":F>"
         );
 
-        if (discordPing)
+        if (shouldIncludePing)
         {
+            constexpr bool                        allowUserMentions     = false;
+            constexpr bool                        allowRoleMentions     = true;
+            constexpr bool                        allowEveryoneMentions = true;
+            constexpr bool                        isReplyMessage        = false;
+            constexpr std::vector<dpp::snowflake> allowedUsers          = {};
+            constexpr std::vector<dpp::snowflake> allowedRoles          = {};
+
             message.set_allowed_mentions(
-                false,
-                true, // Parse @roles
-                true, // Parse @everyone
-                false,
-                std::vector<dpp::snowflake> {},
-                std::vector<dpp::snowflake> {}
+                allowUserMentions,
+                allowRoleMentions,
+                allowEveryoneMentions,
+                isReplyMessage,
+                allowedUsers,
+                allowedRoles
             );
         }
 
@@ -192,7 +204,7 @@ void sendEmbed(
             {
                 if (callback.is_error())
                 {
-                    std::cerr << "Failed to send message" << std::endl;
+                    spdlog::error("Failed to send message!");
                 }
             }
         );
@@ -201,26 +213,24 @@ void sendEmbed(
 
 auto backgroundThread(const std::vector<std::string>& envData) -> void
 {
-    dpp::cluster bot { envData[0] };
+    dpp::cluster bot { envData.at(0) };
     bot.on_log(dpp::utility::cout_logger());
     bot.on_ready(
         [&bot, &envData](const dpp::ready_t& event)
         {
-            std::vector<std::pair<uint16_t, std::string>> prevStatus {};
+            std::vector<std::pair<std::uint16_t, std::string>> prevStatus {};
             while (true)
             {
-                std::vector<std::pair<uint16_t, std::string>> currentStatus
-                    = checkMirrorStatus(bot);
-                bool sendMessage
-                    = handleMessageConditions(prevStatus, currentStatus);
-                if (sendMessage)
+                auto currentStatus = checkMirrorStatus(bot);
+                if (prevStatus.empty()
+                    || statusHasChanged(prevStatus, currentStatus))
                 {
-                    sendEmbed(bot, currentStatus);
+                    sendUpdatedStatus(bot, currentStatus);
                 }
 
                 prevStatus = currentStatus;
 
-                sleep(POLL_DELAY);
+                ::sleep(POLL_DELAY);
             }
         }
     );
