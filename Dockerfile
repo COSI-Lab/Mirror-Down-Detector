@@ -1,15 +1,37 @@
 FROM ubuntu:24.04 AS builder
-RUN apt-get update && apt-get install -y yes g++ cmake libcurl4-openssl-dev libssl-dev ninja-build curl libopus0
-COPY ./src /down-detector/src
-COPY ./CMakeLists.txt /down-detector/CMakeLists.txt
-RUN curl -o dpp.deb https://dl.dpp.dev/ && yes | dpkg -i dpp.deb && rm dpp.deb
+RUN apt-get update && apt-get install -y \
+    yes \
+    git \
+    g++ \
+    cmake \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    ninja-build \
+    curl \
+    libopus0\
+    libz-dev
 WORKDIR /down-detector
+COPY ./src src
+COPY ./include include
+COPY ./cmake cmake
+COPY ./CMakeLists.txt CMakeLists.txt
 RUN cmake -B build -G Ninja
-RUN cmake --build build/
+RUN cmake --build build
 
-FROM ubuntu:24.04
-
-RUN apt-get update && apt-get install -y libcurl4 iputils-ping curl libopus0
-RUN curl -o dpp.deb https://dl.dpp.dev/ && yes | dpkg -i dpp.deb && rm dpp.deb
-COPY --from=builder /down-detector/build/discord-bot /down-detector/bin/discord-bot
-ENTRYPOINT /down-detector/bin/discord-bot
+FROM ubuntu:24.04 AS runner
+RUN apt-get update && apt-get install -y \
+    libcurl4 \
+    iputils-ping \
+    curl \
+    libopus0
+COPY --from=builder \
+    /down-detector/build/src/down-detector \
+    /down-detector/bin/down-detector
+COPY --from=builder \
+    /down-detector/build/_deps/dpp-build/library/libdpp.so \
+    /lib/libdpp.so
+COPY --from=builder \
+    /down-detector/build/_deps/spdlog-build/libspdlog.so \
+    /lib/libspdlog.so
+RUN ldconfig
+ENTRYPOINT /down-detector/bin/down-detector

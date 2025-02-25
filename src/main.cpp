@@ -3,14 +3,15 @@
 #include <thread>
 #include <vector>
 
-#include "background.h"
-#include "bot.h"
-#include "readFile.h"
+#include <mirror/down_detector/background.hpp>
+#include <mirror/down_detector/bot.hpp>
+#include <mirror/down_detector/readFile.hpp>
 
-int main()
+auto main() -> int
 {
-    const std::vector<std::string> envData = readFile("/down-detector/resources/.env");
-    
+    const std::vector<std::string> envData
+        = readFile("/down-detector/resources/.env");
+
     std::thread t1(botThread, envData);
     std::thread t2(backgroundThread, envData);
 

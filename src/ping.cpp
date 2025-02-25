@@ -1,3 +1,15 @@
+// Header Being Defined
+#include <mirror/down_detector/ping.hpp>
+
+// System Headers
+#include <fcntl.h>
+#include <poll.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+// Standard Library Headers
+#include <cerrno>
+#include <csignal>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
@@ -8,13 +20,6 @@
 #include <string>
 #include <utility>
 
-#include <fcntl.h>
-#include <poll.h>
-#include <sys/wait.h>
-#include <unistd.h>
-
-#include "ping.h"
-
 constexpr time_t  PING_TIMEOUT_SECONDS = 10;
 constexpr ssize_t PING_BUFFER          = 1024;
 
@@ -22,7 +27,7 @@ constexpr ssize_t PING_BUFFER          = 1024;
  * @return `true` if the URL or IP responds to ping requests, and `false`
  * otherwise.
  */
-std::pair<bool, std::string> ping(std::string url)
+auto ping(const std::string& url) -> std::pair<bool, std::string>
 {
     // Create pipe for IPC
     int fd[2];
@@ -34,20 +39,25 @@ std::pair<bool, std::string> ping(std::string url)
     if (pid == 0)
     {
         // Using strdup() to avoid const casting
-        char* argv[] = {
-            strdup("/bin/ping"), strdup(url.c_str()),
-            strdup("-c"), strdup("3"),      // 3 times
-            strdup("-W"), strdup("1"),      // 1s timeout
-            strdup("-i"), strdup("0.1"),    // 0.1s interval    
-            NULL
-        };                                    
+        char* argv[] = { strdup("/bin/ping"),
+                         strdup(url.c_str()),
+                         strdup("-c"),
+                         strdup("3"),   // 3 times
+                         strdup("-W"),
+                         strdup("1"),   // 1s timeout
+                         strdup("-i"),
+                         strdup("0.1"), // 0.1s interval
+                         NULL };
 
-        close(fd[0]);   // don't output to console
-        dup2(fd[1], 1); // Reassign ping's stdout to our pipe
+        close(fd[0]);                   // don't output to console
+        dup2(fd[1], 1);                 // Reassign ping's stdout to our pipe
 
         execve("/bin/ping", argv, NULL);
         perror("execve(2)");
-        return std::make_pair(false, "execve(2) error " + errno);
+        return std::make_pair(
+            false,
+            "execve(2) error " + std::to_string(errno)
+        );
     }
 
     if (pid == -1)
@@ -87,7 +97,7 @@ std::pair<bool, std::string> ping(std::string url)
             break;
         }
 
-        sleep(0.5); // lets not hog the cpu
+        sleep(1); // lets not hog the cpu
     }
 
     if (pid != 0)
@@ -99,10 +109,10 @@ std::pair<bool, std::string> ping(std::string url)
     close(fd[0]);
     close(fd[1]);
     std::string pingStr { pingRes };
-    delete pingRes;
+    delete[] pingRes;
 
     std::regex expression("\\s100% packet loss");
-    bool up = !std::regex_search(pingStr, expression);
+    bool       up = !std::regex_search(pingStr, expression);
 
     // return a status and the ping output
     std::pair<bool, std::string> pingObj(up, pingStr);

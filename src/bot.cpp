@@ -1,12 +1,18 @@
+// Header Being Defined
+#include <mirror/down_detector/bot.hpp>
+
+// Standard Library Includes
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
+// Third Party Includes
 #include <dpp/dpp.h>
 
-#include "ping.h"
-#include "readFile.h"
+// Project Includes
+#include <mirror/down_detector/ping.hpp>
+#include <mirror/down_detector/readFile.hpp>
 
 void registerSlashCommands(dpp::cluster& bot, std::vector<std::string> envData)
 {
@@ -91,8 +97,10 @@ void watchMirrorCommand(
     }
 
     // TODO: make this pretty
-    bool channelInFile
-        = hasChannel("/down-detector/resources/channels.txt", std::to_string(e_channel_id));
+    bool channelInFile = hasChannel(
+        "/down-detector/resources/channels.txt",
+        std::to_string(e_channel_id)
+    );
     std::vector<std::vector<std::string>> channels_roles
         = readFile2d("/down-detector/resources/channels.txt");
 
@@ -109,7 +117,10 @@ void watchMirrorCommand(
             channels_roles.push_back(std::vector<std::string> {
                 std::to_string(e_channel_id),
                 roleMention });
-            writeFile2d(channels_roles, "/down-detector/resources/channels.txt");
+            writeFile2d(
+                channels_roles,
+                "/down-detector/resources/channels.txt"
+            );
             event.reply("This channel now will recieve down-detection messages."
             );
         }
@@ -197,7 +208,7 @@ void pingCommand(
     }
 }
 
-void botThread(std::vector<std::string> envData)
+auto botThread(const std::vector<std::string>& envData) -> void
 {
     dpp::cluster bot(envData[0]);
     std::cout << "Key: " << envData[0] << "\n";
@@ -216,7 +227,8 @@ void botThread(std::vector<std::string> envData)
                 watchMirrorCommand(interaction, event, cmd_data);
             }
 
-            if (interaction.get_command_name() == "ping") // Fix param passing here
+            if (interaction.get_command_name()
+                == "ping") // Fix param passing here
             {
                 pingCommand(interaction, event, cmd_data);
             }

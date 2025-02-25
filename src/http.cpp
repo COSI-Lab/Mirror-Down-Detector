@@ -1,14 +1,21 @@
-#include "http.h"
-#include <curl/curl.h>
+// Header Being Defined
+#include <mirror/down_detector/http.hpp>
+
+// Standard Library Includes
+#include <functional>
 #include <future>
 #include <iostream>
+#include <string>
+
+// Third Party Includes
+#include <curl/curl.h>
 
 size_t write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
 {
     return size * nmemb;
 }
 
-void request(const std::string& url, std::function<void(long)> callback)
+auto request(const std::string& url, std::function<void(long)> callback) -> void
 {
     CURL* curl = curl_easy_init();
     if (!curl)

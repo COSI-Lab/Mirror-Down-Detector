@@ -1,16 +1,24 @@
+// Header Being Defined
+#include <mirror/down_detector/background.hpp>
+
+// System Includes
+#include <unistd.h>
+
+// Standard Library Includes
 #include <ctime>
 #include <future>
 #include <iostream>
 #include <string>
-#include <unistd.h> //linux only library
 #include <utility>
 #include <vector>
 
+// Third Party Includes
 #include <dpp/dpp.h>
 
-#include "http.h"
-#include "ping.h"
-#include "readFile.h"
+// Project Includes
+#include <mirror/down_detector/http.hpp>
+#include <mirror/down_detector/ping.hpp>
+#include <mirror/down_detector/readFile.hpp>
 
 const int PING_DELAY = 900;
 const int POLL_DELAY = 10;
@@ -191,7 +199,7 @@ void sendEmbed(
     }
 }
 
-void backgroundThread(std::vector<std::string> envData)
+auto backgroundThread(const std::vector<std::string>& envData) -> void
 {
     dpp::cluster bot { envData[0] };
     bot.on_log(dpp::utility::cout_logger());

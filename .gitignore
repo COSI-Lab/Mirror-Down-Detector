@@ -1,4 +1,3 @@
 .vscode
-resources/.env
-resources/channels.txt
+resources
 build
